@@ -110,7 +110,7 @@ app.post('/api/enviar-correo', async (req, res) => {
 
   try {
     await transporter.sendMail({
-      from: `"Clínica Médica" <${process.env.GMAIL_USER}>`,
+      from: `"MediSync te Saluda" <${process.env.GMAIL_USER}>`,
       to: email,
       subject: 'Confirmación de Cita Médica',
       html: `

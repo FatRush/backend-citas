@@ -41,12 +41,13 @@
 
  
 //   const pacienteNombre = cita?.paciente || 'Paciente';
+//   const pacienteApellido = cita?.paciente || 'Paciente';
 //   const doctorNombre = cita?.doctor || 'Doctor';
 //   const fechaCita = cita?.fecha || 'Fecha no especificada';
 //   const horaCita = cita?.hora || 'Hora no especificada';
 
 //   const mailOptions = {
-//     from: '"Clínica Médica" <TU_CORREO@gmail.com>',
+//     from: '"MediSync te Saluda" <TU_CORREO@gmail.com>',
 //     to: email,
 //     subject: 'Confirmación de Cita Médica',
 //     html: `
@@ -85,6 +86,8 @@
 // });
 
 
+
+
 const express = require('express');
 const nodemailer = require('nodemailer');
 const cors = require('cors');
@@ -93,23 +96,44 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// 1. Ruta de prueba para verificar en el navegador que el backend está vivo
+app.get('/', (req, res) => {
+  res.send('Servidor de MediSync corriendo exitosamente 🚀');
+});
+
+// 2. Configuración de Nodemailer (eliminando posibles espacios en la clave)
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
   port: 465,
   secure: true,
   auth: {
     user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_PASS
+    pass: process.env.GMAIL_PASS ? process.env.GMAIL_PASS.replace(/\s+/g, '') : ''
   },
   tls: { rejectUnauthorized: false }
 });
 
+// 3. Verificación automática de la conexión con Gmail al arrancar el servidor
+transporter.verify((error, success) => {
+  if (error) {
+    console.error('❌ Error al conectar con Gmail (Revisa GMAIL_USER / GMAIL_PASS):', error.message);
+  } else {
+    console.log('✅ Servidor autenticado y listo para enviar correos desde Gmail');
+  }
+});
+
+// 4. Ruta para el envío de correos con logs detallados
 app.post('/api/enviar-correo', async (req, res) => {
+  console.log('📩 Petición recibida:', req.body);
   const { email, cita } = req.body;
-  if (!email) return res.status(400).json({ error: 'Falta correo' });
+
+  if (!email) {
+    console.warn('⚠️ Intento de envío sin correo de destino');
+    return res.status(400).json({ error: 'Falta correo' });
+  }
 
   try {
-    await transporter.sendMail({
+    const info = await transporter.sendMail({
       from: `"MediSync te Saluda" <${process.env.GMAIL_USER}>`,
       to: email,
       subject: 'Confirmación de Cita Médica',
@@ -117,18 +141,20 @@ app.post('/api/enviar-correo', async (req, res) => {
         <h2>¡Hola ${cita?.paciente || 'Paciente'}!</h2>
         <p>Tu cita médica ha sido <strong>CONFIRMADA</strong>.</p>
         <ul>
-          <li><strong>Doctor:</strong> ${cita?.doctor}</li>
-          <li><strong>Fecha:</strong> ${cita?.fecha}</li>
-          <li><strong>Hora:</strong> ${cita?.hora}</li>
+          <li><strong>Doctor:</strong> ${cita?.doctor || 'No especificado'}</li>
+          <li><strong>Fecha:</strong> ${cita?.fecha || 'No especificada'}</li>
+          <li><strong>Hora:</strong> ${cita?.hora || 'No especificada'}</li>
         </ul>
       `
     });
+
+    console.log('✅ Correo enviado con éxito. ID:', info.messageId);
     res.status(200).json({ success: true, message: 'Correo enviado' });
   } catch (error) {
+    console.error('❌ Error de Nodemailer al enviar correo:', error.message);
     res.status(500).json({ success: false, error: error.message });
   }
 });
 
-// Railway asigna automáticamente la variable process.env.PORT
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Servidor en puerto ${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Servidor iniciado en el puerto ${PORT}`));

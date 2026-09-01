@@ -104,8 +104,8 @@ app.get('/', (req, res) => {
 // 2. Configuración de Nodemailer (eliminando posibles espacios en la clave)
 const transporter = nodemailer.createTransport({
   host: 'smtp.gmail.com',
-  port: 465,
-  secure: true,
+  port: 587,
+  secure: false,
   auth: {
     user: process.env.GMAIL_USER,
     pass: process.env.GMAIL_PASS ? process.env.GMAIL_PASS.replace(/\s+/g, '') : ''
@@ -133,7 +133,11 @@ app.post('/api/enviar-correo', async (req, res) => {
   }
 
   try {
+<<<<<<< HEAD
     const info = await transporter.sendMail({
+=======
+    await transporter.sendMail({
+>>>>>>> d8fa992d22a865456cecbe0fe7904a46772c5abe
       from: `"MediSync te Saluda" <${process.env.GMAIL_USER}>`,
       to: email,
       subject: 'Confirmación de Cita Médica',
@@ -157,4 +161,8 @@ app.post('/api/enviar-correo', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
+<<<<<<< HEAD
 app.listen(PORT, () => console.log(`🚀 Servidor iniciado en el puerto ${PORT}`));
+=======
+app.listen(PORT, () => console.log(`Servidor en puerto ${PORT}`));
+>>>>>>> d8fa992d22a865456cecbe0fe7904a46772c5abe
